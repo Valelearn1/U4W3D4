@@ -1,0 +1,375 @@
+{
+	"info": {
+		"_postman_id": "b1e2c3d4-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
+		"name": "BlogPost API",
+		"description": "Collection di test per il set di API REST di gestione BlogPost e User (Controller -> Service -> Repository -> Model). Un BlogPost ha i campi: categoria, titolo, contenuto, tempoDiLettura, pubblicato, autoreId (id di uno User esistente). I campi id e cover sono generati automaticamente dal server e non vanno mai inclusi nel body delle richieste POST/PUT. Un User ha i campi: nome, email, password, ruolo (USER o ADMIN).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User API",
+			"item": [
+				{
+					"name": "Crea un nuovo User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Mario Rossi\",\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\",\n    \"ruolo\": \"ADMIN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Crea un nuovo User. Risposta attesa: 201 Created, oppure 400 se i dati non sono validi o l'email è già in uso."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi un User per id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Restituisce il singolo User con id indicato. Risposta attesa: 200 OK, oppure 404 se l'id non esiste."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi tutti gli User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Restituisce tutti gli User presenti. Risposta attesa: 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Aggiorna un User esistente",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Mario Rossi\",\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\",\n    \"ruolo\": \"USER\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Aggiorna lo User con id indicato. Risposta attesa: 200 OK, oppure 404 se l'id non esiste, oppure 400 se l'email è già in uso da un altro User."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancella un User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Cancella lo User con id indicato (e tutti i suoi BlogPost, eliminati manualmente lato Service). Risposta attesa: 204 No Content, oppure 404 se l'id non esiste."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "BlogPost API",
+			"item": [
+				{
+					"name": "Crea un nuovo BlogPost",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"categoria\": \"Tecnologia\",\n    \"titolo\": \"10 consigli per scrivere codice pulito\",\n    \"contenuto\": \"Scrivere codice pulito e mantenibile è fondamentale per il successo a lungo termine di un progetto software. In questo articolo vedremo dieci consigli pratici...\",\n    \"tempoDiLettura\": 7,\n    \"pubblicato\": true,\n    \"autoreId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							]
+						},
+						"description": "Crea un nuovo BlogPost. autoreId deve corrispondere a uno User esistente. Risposta attesa: 201 Created, oppure 400 se i dati non sono validi, oppure 404 se l'autore non esiste. Il campo cover viene generato automaticamente dal server."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi un BlogPost per id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"1"
+							]
+						},
+						"description": "Restituisce il singolo BlogPost con id indicato. Risposta attesa: 200 OK, oppure 404 se l'id non esiste."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi tutti i BlogPost",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							]
+						},
+						"description": "Restituisce tutti i BlogPost presenti. Risposta attesa: 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi tutti i BlogPost - solo pubblicati",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts?pubblicato=true",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							],
+							"query": [
+								{
+									"key": "pubblicato",
+									"value": "true"
+								}
+							]
+						},
+						"description": "[EXTRA] Restituisce solo i BlogPost pubblicati, filtrati con uno Stream lato Service. Risposta attesa: 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi tutti i BlogPost - solo bozze",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts?pubblicato=false",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							],
+							"query": [
+								{
+									"key": "pubblicato",
+									"value": "false"
+								}
+							]
+						},
+						"description": "[EXTRA] Restituisce solo i BlogPost non pubblicati (bozze), filtrati con uno Stream lato Service. Risposta attesa: 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Cerca BlogPost per titolo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts?titolo=pulito",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							],
+							"query": [
+								{
+									"key": "titolo",
+									"value": "pulito"
+								}
+							]
+						},
+						"description": "Restituisce i BlogPost il cui titolo contiene la keyword indicata (query JPQL con LIKE). Il parametro titolo è combinabile con pubblicato. Risposta attesa: 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Leggi tutti i BlogPost di un autore",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/autore/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"autore",
+								"1"
+							]
+						},
+						"description": "[EXTRA] Restituisce tutti i BlogPost scritti dallo User con id indicato. Risposta attesa: 200 OK, oppure 404 se l'autore non esiste."
+					},
+					"response": []
+				},
+				{
+					"name": "Aggiorna un BlogPost esistente",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"categoria\": \"Tecnologia\",\n    \"titolo\": \"10 consigli per scrivere codice pulito (aggiornato)\",\n    \"contenuto\": \"Articolo aggiornato con nuovi esempi pratici e best practice per il refactoring del codice.\",\n    \"tempoDiLettura\": 9,\n    \"pubblicato\": true,\n    \"autoreId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"1"
+							]
+						},
+						"description": "Aggiorna il BlogPost con id indicato. Risposta attesa: 200 OK, oppure 404 se l'id non esiste. Il campo cover non viene mai modificato dal client."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancella un BlogPost",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"1"
+							]
+						},
+						"description": "Cancella il BlogPost con id indicato. Risposta attesa: 204 No Content, oppure 404 se l'id non esiste."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001",
+			"type": "string"
+		}
+	]
+}
