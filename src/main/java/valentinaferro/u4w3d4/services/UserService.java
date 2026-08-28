@@ -11,6 +11,7 @@ import valentinaferro.u4w3d4.exceptions.ValidationException;
 import valentinaferro.u4w3d4.repositories.BlogPostRepository;
 import valentinaferro.u4w3d4.repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -61,8 +62,15 @@ public class UserService {
 				.toList();
 	}
 
-	public UserResponseDTO update(Long id, UserRequestDTO dto) {
+	public UserResponseDTO update(Long id, UserRequestDTO dto, User currentUser) {
 		User esistente = findById(id);
+
+		// AUTORIZZAZIONE: puoi modificare SOLO il tuo profilo, a meno che tu non sia ADMIN.
+		// Senza questo controllo qualsiasi utente autenticato potrebbe cambiare nome/email/password
+		// di un altro utente qualsiasi passando il suo id nell'URL (IDOR).
+		if (currentUser.getRuolo() != Ruolo.ADMIN && !currentUser.getId().equals(id)) {
+			throw new AccessDeniedException("Puoi modificare solo il tuo profilo");
+		}
 
 		// Ricontrollo l'unicità dell'email solo se l'utente la sta effettivamente cambiando,
 		// altrimenti la query troverebbe sempre se stesso e lancerebbe l'eccezione per errore.
@@ -107,8 +115,14 @@ public class UserService {
 
 
 	@Transactional // Quando più di una modifica al DB avviene nello stesso metodo è OBBLIGATORIO usare Transactional
-	public void delete(Long id) {
+	public void delete(Long id, User currentUser) {
 		User esistente = findById(id);
+
+		// AUTORIZZAZIONE: puoi cancellare SOLO il tuo profilo, a meno che tu non sia ADMIN.
+		if (currentUser.getRuolo() != Ruolo.ADMIN && !currentUser.getId().equals(id)) {
+			throw new AccessDeniedException("Puoi cancellare solo il tuo profilo");
+		}
+
 		blogPostRepository.deleteByAutoreId(id); // cancella prima i post collegati (altrimenti violazione FK)
 		userRepository.delete(esistente);
 	}

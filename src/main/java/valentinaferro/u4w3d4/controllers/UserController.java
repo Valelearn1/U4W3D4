@@ -3,10 +3,12 @@ package valentinaferro.u4w3d4.controllers;
 import valentinaferro.u4w3d4.dto.AssignRoleDTO;
 import valentinaferro.u4w3d4.dto.UserRequestDTO;
 import valentinaferro.u4w3d4.dto.UserResponseDTO;
+import valentinaferro.u4w3d4.entities.User;
 import valentinaferro.u4w3d4.exceptions.ValidationException;
 import valentinaferro.u4w3d4.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -53,20 +55,23 @@ public class UserController {
 	}
 
 	@PutMapping("/{id}")
-	public UserResponseDTO update(@PathVariable Long id, @RequestBody @Validated UserRequestDTO userRequestDTO, BindingResult validationResult) {
+	// @AuthenticationPrincipal: l'utente autenticato messo nel SecurityContext da AuthFilter.
+	// Serve al service per verificare che stia modificando il proprio profilo (o che sia ADMIN).
+	public UserResponseDTO update(@PathVariable Long id, @RequestBody @Validated UserRequestDTO userRequestDTO, BindingResult validationResult,
+	                             @AuthenticationPrincipal User currentUser) {
 		if (validationResult.hasErrors()) {
 			List<String> errorsList = validationResult.getFieldErrors().stream()
 					.map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
 					.toList();
 			throw new ValidationException(errorsList);
 		}
-		return userService.update(id, userRequestDTO); // 200
+		return userService.update(id, userRequestDTO, currentUser); // 200
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT) // 204
-	public void delete(@PathVariable Long id) {
-		userService.delete(id);
+	public void delete(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
+		userService.delete(id, currentUser);
 	}
 
 	// PATCH /api/users/{id}/role : promuove/cambia il ruolo di un utente (es. da USER ad ADMIN).

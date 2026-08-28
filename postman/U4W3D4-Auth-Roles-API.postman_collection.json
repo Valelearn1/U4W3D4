@@ -1,0 +1,573 @@
+{
+	"info": {
+		"_postman_id": "7a1f9c20-4d3b-4e11-9b2a-9f0c8d4e21a7",
+		"name": "U4W3D4 - Auth & Roles API",
+		"description": "Collection completa del progetto U4W3D4 (Spring Boot + JWT + hashing BCrypt + autorizzazione per ruoli).\n\nBase URL: http://localhost:3001\n\n## Come usarla\n1. **Auth > Registra utente** per creare uno USER (endpoint pubblico). Lo script salva l'id in `userId`.\n2. **Auth > Login (USER)**: lo script salva il JWT nella variabile `token`, usato in automatico da tutte le richieste protette.\n3. Per gli endpoint riservati agli ADMIN serve un utente con ruolo ADMIN. Il PRIMO admin va creato a mano nel DB:\n   `UPDATE users SET ruolo = 'ADMIN' WHERE email = 'mario.rossi@example.com';`\n   poi **Auth > Login (ADMIN)** salva il token in `adminToken`.\n\n## Regole di autorizzazione\n- `GET /api/users` e `PATCH /api/users/{id}/role`: solo ADMIN\n- `PUT` / `DELETE /api/users/{id}`: solo se stessi, oppure ADMIN su chiunque\n- `PUT /api/blogposts/{id}`: solo l'autore del post\n- `DELETE /api/blogposts/{id}`: l'autore oppure un ADMIN\n- `POST /api/users` e `POST /api/auth/login`: pubblici (nessun token)\n\nStati attesi: 401 = token mancante/non valido, 403 = autenticato ma senza permessi, 400 = validazione fallita.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "adminToken",
+			"value": ""
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "blogPostId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Registra utente (pubblico)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const body = pm.response.json();",
+									"if (body && body.id) {",
+									"    pm.collectionVariables.set('userId', body.id);",
+									"    console.log('userId =', body.id);",
+									"}",
+									"pm.test('la risposta NON contiene la password', () => {",
+									"    pm.expect(pm.response.text().toLowerCase()).to.not.include('password');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Mario Rossi\",\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Crea un nuovo utente. Endpoint PUBBLICO (nessun token). La password viene salvata hashata con BCrypt. Il ruolo iniziale è sempre USER: non è possibile passarlo nel body."
+					}
+				},
+				{
+					"name": "Login (USER)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('200 OK', () => pm.response.to.have.status(200));",
+									"const body = pm.response.json();",
+									"if (body && body.accessToken) {",
+									"    pm.collectionVariables.set('token', body.accessToken);",
+									"    console.log('token USER salvato');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Verifica le credenziali con bcrypt.matches() e restituisce un JWT. Lo script di test salva `accessToken` nella variabile di collection `token`."
+					}
+				},
+				{
+					"name": "Login (ADMIN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('200 OK', () => pm.response.to.have.status(200));",
+									"const body = pm.response.json();",
+									"if (body && body.accessToken) {",
+									"    pm.collectionVariables.set('adminToken', body.accessToken);",
+									"    console.log('token ADMIN salvato');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login di un utente che ha ruolo ADMIN nel DB. Salva il JWT in `adminToken`, usato dalle richieste riservate agli ADMIN.\n\nRicorda: il primo ADMIN si crea a mano con una UPDATE SQL sulla tabella users."
+					}
+				},
+				{
+					"name": "Login - credenziali errate (401)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"passwordSbagliata\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Caso negativo: password errata -> 401 Unauthorized con messaggio 'Credenziali errate'."
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "GET tutti gli utenti (solo ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Elenco completo degli utenti. @PreAuthorize(\"hasRole('ADMIN')\").\n- senza token -> 401\n- token USER -> 403\n- token ADMIN -> 200"
+					}
+				},
+				{
+					"name": "GET utente per id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Richiede un token valido (qualsiasi ruolo). Risponde con UserResponseDTO (senza password)."
+					}
+				},
+				{
+					"name": "PUT aggiorna utente (se stesso o ADMIN)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Mario Rossi (aggiornato)\",\n    \"email\": \"mario.rossi@example.com\",\n    \"password\": \"Password1!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Un utente può aggiornare SOLO il proprio profilo; un ADMIN può aggiornare chiunque.\n- utente su id altrui -> 403\nLa password viene ri-hashata. Il campo ruolo non è presente nel DTO, quindi non è modificabile qui."
+					}
+				},
+				{
+					"name": "PATCH assegna ruolo (solo ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ruolo\": \"ADMIN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}/role",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}",
+								"role"
+							]
+						},
+						"description": "Promuove/cambia il ruolo di un utente. @PreAuthorize(\"hasRole('ADMIN')\").\n- valori ammessi: USER, ADMIN (case-insensitive)\n- valore non valido (es. \"PIPPO\") -> 400\n- token USER -> 403"
+					}
+				},
+				{
+					"name": "DELETE utente (se stesso o ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Un utente può cancellare SOLO il proprio profilo; un ADMIN può cancellare chiunque. Risponde 204 No Content. Cancella prima i BlogPost collegati (FK)."
+					}
+				}
+			]
+		},
+		{
+			"name": "BlogPosts",
+			"item": [
+				{
+					"name": "POST crea BlogPost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('201 Created', () => pm.response.to.have.status(201));",
+									"const body = pm.response.json();",
+									"if (body && body.id) {",
+									"    pm.collectionVariables.set('blogPostId', body.id);",
+									"    console.log('blogPostId =', body.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"categoria\": \"Tech\",\n    \"titolo\": \"Il mio primo post\",\n    \"contenuto\": \"Contenuto di prova abbastanza lungo.\",\n    \"tempoDiLettura\": 3,\n    \"pubblicato\": true,\n    \"autoreId\": {{userId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							]
+						},
+						"description": "Richiede token valido. `autoreId` deve essere l'id di uno User esistente. `id` e `cover` sono generati dal server. Lo script salva l'id in `blogPostId`."
+					}
+				},
+				{
+					"name": "GET tutti i BlogPost",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts?pubblicato=true&titolo=primo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts"
+							],
+							"query": [
+								{
+									"key": "pubblicato",
+									"value": "true",
+									"description": "opzionale: true/false"
+								},
+								{
+									"key": "titolo",
+									"value": "primo",
+									"description": "opzionale: filtro 'contiene'"
+								}
+							]
+						},
+						"description": "Elenco dei BlogPost. I due query param sono opzionali (disabilitali per avere l'elenco completo)."
+					}
+				},
+				{
+					"name": "GET BlogPost per id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/{{blogPostId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"{{blogPostId}}"
+							]
+						},
+						"description": "Dettaglio di un singolo BlogPost. 404 se l'id non esiste."
+					}
+				},
+				{
+					"name": "GET BlogPost per autore",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/autore/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"autore",
+								"{{userId}}"
+							]
+						},
+						"description": "Tutti i BlogPost scritti da un determinato autore. 404 se l'autore non esiste."
+					}
+				},
+				{
+					"name": "PUT aggiorna BlogPost (solo autore)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"categoria\": \"Tech\",\n    \"titolo\": \"Il mio primo post (modificato)\",\n    \"contenuto\": \"Contenuto aggiornato.\",\n    \"tempoDiLettura\": 4,\n    \"pubblicato\": false,\n    \"autoreId\": {{userId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/{{blogPostId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"{{blogPostId}}"
+							]
+						},
+						"description": "SOLO l'autore del post può modificarlo (nemmeno un ADMIN).\n- token di un utente diverso dall'autore -> 403"
+					}
+				},
+				{
+					"name": "DELETE BlogPost (autore o ADMIN)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/blogposts/{{blogPostId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"blogposts",
+								"{{blogPostId}}"
+							]
+						},
+						"description": "Può eliminare il post l'autore (sul proprio) oppure un ADMIN (su qualsiasi post). Risponde 204.\n- USER non autore -> 403\nPer provarlo come ADMIN, imposta l'header Authorization su {{adminToken}}."
+					}
+				}
+			]
+		}
+	]
+}
